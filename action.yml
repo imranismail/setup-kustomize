@@ -1,10 +1,10 @@
-name: 'Node 12 Template Action'
-description: 'Get started with Node actions'
-author: 'GitHub'
+name: 'Setup Kustomize'
+description: 'Setup a Kustomize environment and add it to the path'
+author: 'Imran Ismail <imran.codely@gmail.com>'
 inputs:
-  myInput:
-    description: 'Input to use'
-    default: 'world'
+  kustomize-version:
+    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
+    default: '3.x'
 runs:
   using: 'node12'
-  main: 'lib/main.js'
+  main: 'lib/setup-kustomize.js'
