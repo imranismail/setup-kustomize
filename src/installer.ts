@@ -6,6 +6,7 @@ import * as restm from 'typed-rest-client/RestClient';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as fs from 'fs';
 
 let osPlat: string = os.platform();
 let osArch: string = os.arch();
@@ -168,6 +169,8 @@ async function acquireKustomize(version: string): Promise<string> {
 
     throw `Failed to download version ${version}: ${err}`;
   }
+
+  fs.chmodSync(downloadPath, 0o755);
 
   return await tc.cacheFile(downloadPath, 'kustomize', 'kustomize', version);
 }
