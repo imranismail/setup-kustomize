@@ -19,10 +19,10 @@ describe('installer tests', () => {
     await io.rmRF(tempDir);
   }, 100000);
 
-  // afterAll(async () => {
-  //   await io.rmRF(toolDir);
-  //   await io.rmRF(tempDir);
-  // }, 100000);
+  afterAll(async () => {
+    await io.rmRF(toolDir);
+    await io.rmRF(tempDir);
+  }, 100000);
 
   it('Acquires version of kustomize if no matching version is installed', async () => {
     await installer.getKustomize('3.1.0');
