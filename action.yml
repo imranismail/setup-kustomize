@@ -1,6 +1,9 @@
 name: 'Setup Kustomize'
 description: 'Setup a Kustomize environment and add it to the path'
 author: 'Imran Ismail <imran.codely@gmail.com>'
+branding:
+  icon: edit
+  color: purple
 inputs:
   kustomize-version:
     description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'

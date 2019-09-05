@@ -6,7 +6,6 @@ import * as restm from 'typed-rest-client/RestClient';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import * as fs from 'fs';
 
 let osPlat: string = os.platform();
 let osArch: string = os.arch();
@@ -97,27 +96,32 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
   let dataUrl = 'https://api.github.com/repos/kubernetes-sigs/kustomize/releases';
   let rest: restm.RestClient = new restm.RestClient('setup-kustomize');
   let kustomizeVersions: IKustomizeVersion[] = (await rest.get<IKustomizeVersion[]>(dataUrl)).result || [];
+
   kustomizeVersions.forEach((kustomizeVersion: IKustomizeVersion) => {
     if (kustomizeVersion.assets.some(asset => asset.name.includes(dataFileName))) {
-      versions.push(kustomizeVersion.name);
+      let version = semver.clean(kustomizeVersion.name);
+
+      if (version != null) {
+        versions.push(version);
+      }
     }
   });
 
-  // get the latest version that matches the version spec
-  let version: string = evaluateVersions(versions, versionSpec);
-  return version;
+  return evaluateVersions(versions, versionSpec);
 }
 
-// TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
+
   core.debug(`evaluating ${versions.length} versions`);
+
   versions = versions.sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
     }
     return -1;
   });
+
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
     const satisfied: boolean = semver.satisfies(potential, versionSpec);
@@ -139,13 +143,26 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 async function acquireKustomize(version: string): Promise<string> {
   version = semver.clean(version) || '';
 
-  let fileName: string = `kustomize_${version}`
+  let downloadUrl: string;
+  let downloadPath: string;
+
+  if (semver.gte(version, "3.3.0")) {
+    downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_%{os}_%{arch}.tar.gz`;
+  } else if (semver.gte(version, "3.2.1")) {
+    downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_kustomize.v${version}_%{os}_%{arch}`;
+  } else {
+    downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/v${version}/kustomize_${version}_%{os}_%{arch}`
+  }
 
   switch (osPlat) {
+    case 'win32':
+      if (semver.lte(version, "3.2.1")) throw new Error(`Unexpected OS '${osPlat}'`);
+      downloadUrl = downloadUrl.replace('%{os}', 'windows');
+      downloadUrl = `${downloadUrl}.exe`;
+      break;
     case 'linux':
     case 'darwin':
-    case 'win32':
-      fileName = `${fileName}_${osPlat}`;
+      downloadUrl = downloadUrl.replace('%{os}', osPlat);
       break;
     default:
       throw new Error(`Unexpected OS '${osPlat}'`);
@@ -153,14 +170,11 @@ async function acquireKustomize(version: string): Promise<string> {
 
   switch (osArch) {
     case 'x64':
-      fileName = `${fileName}_amd64`;
+      downloadUrl = downloadUrl.replace('%{arch}', 'amd64');
       break;
     default:
-      fileName = `${fileName}_${osArch}`;
+      throw new Error(`Unexpected Arch '${osArch}'`);
   }
-
-  let downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/v${version}/${fileName}`
-  let downloadPath: string;
 
   try {
     downloadPath = await tc.downloadTool(downloadUrl);
@@ -170,7 +184,16 @@ async function acquireKustomize(version: string): Promise<string> {
     throw `Failed to download version ${version}: ${err}`;
   }
 
-  fs.chmodSync(downloadPath, 0o755);
+  let toolPath = downloadPath;
+
+  if (downloadUrl.endsWith('.tar.gz')) {
+    let extPath = await tc.extractTar(downloadPath);
+    toolPath = path.join(extPath, "kustomize")
+  }
+
+  if (osPlat == "win32") {
+    toolPath = `${toolPath}.exe`
+  }
 
   return await tc.cacheFile(downloadPath, 'kustomize', 'kustomize', version);
 }
