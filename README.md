@@ -1,6 +1,4 @@
-# Github Action for setting up Kustomize
-
-## Getting Started
+## TLDR
 
 ```yaml
 on:
@@ -17,12 +15,12 @@ jobs:
     - uses: imranismail/setup-kustomize@master
       with:
         kustomize-version: "3.1.0"
-    - run: git clone https://${REPO_TOKEN}@github.com/kfit-dev/deployments.git .
+    - run: git clone https://${REPO_TOKEN}@github.com/org/deployment.git .
       env:
         REPO_TOKEN: ${{secrets.REPO_TOKEN}}
-    - run: git branch deployments/favefood/${GITHUB_REF/refs\/heads/}
-    - run: kustomize edit set image favefood:${GITHUB_SHA}
+    - run: git branch deployment/app/${GITHUB_REF/refs\/heads\//}
+    - run: kustomize edit set image app:${GITHUB_SHA}
     - run: git add .
-    - run: git commit -m "Set `favefood` image tag to ${GITHUB_SHA}"
-    - run: git push origin deployments/favefood/${GITHUB_REF/refs\/heads/}
+    - run: git commit -m "Set `app` image tag to `${GITHUB_SHA}`"
+    - run: git push origin deployment/app/${GITHUB_REF/refs\/heads\//}
 ```
