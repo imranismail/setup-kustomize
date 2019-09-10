@@ -1,9 +1,28 @@
-# JavaScript Action Template
-
-This template offers an easy way to get started writing a JavaScript action with TypeScript compile time support, unit testing with Jest and using the GitHub Actions Toolkit.
+# Github Action for setting up Kustomize
 
 ## Getting Started
 
-See the walkthrough located [here](https://github.com/actions/toolkit/blob/master/docs/javascript-action.md).
+```yaml
+on:
+  push:
+    branches:
+    - master
 
-In addition to walking your through how to create an action, it also provides strategies for versioning, releasing and referencing your actions.
+jobs:
+  create-deployment-branch:
+    runs-on: ubuntu-latest
+    needs:
+    - publish-image
+    steps:
+    - uses: imranismail/setup-kustomize@master
+      with:
+        kustomize-version: "3.1.0"
+    - run: git clone https://${REPO_TOKEN}@github.com/kfit-dev/deployments.git .
+      env:
+        REPO_TOKEN: ${{secrets.REPO_TOKEN}}
+    - run: git branch deployments/favefood/${GITHUB_REF/refs\/heads/}
+    - run: kustomize edit set image favefood:${GITHUB_SHA}
+    - run: git add .
+    - run: git commit -m "Set `favefood` image tag to ${GITHUB_SHA}"
+    - run: git push origin deployments/favefood/${GITHUB_REF/refs\/heads/}
+```
