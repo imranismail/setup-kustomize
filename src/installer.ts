@@ -158,7 +158,7 @@ async function acquireKustomize(version: string): Promise<string> {
     case 'win32':
       if (semver.lte(version, "3.2.1")) throw new Error(`Unexpected OS '${osPlat}'`);
       downloadUrl = downloadUrl.replace('%{os}', 'windows');
-      downloadUrl = `${downloadUrl}.exe`;
+      if (semver.lt(version, "3.3.0")) downloadUrl = `${downloadUrl}.exe`;
       break;
     case 'linux':
     case 'darwin':
