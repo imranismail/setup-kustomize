@@ -144,7 +144,13 @@ async function acquireKustomize(version: string): Promise<string> {
   version = semver.clean(version) || '';
 
   let downloadUrl: string;
-  let downloadPath: string;
+  let toolPath: string;
+  let toolFilename = "kustomize";
+  let toolName = "kustomize";
+
+  if (osPlat == "win32") {
+    toolFilename = `${toolFilename}.exe`
+  }
 
   if (semver.gte(version, "3.3.0")) {
     downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_%{os}_%{arch}.tar.gz`;
@@ -177,23 +183,16 @@ async function acquireKustomize(version: string): Promise<string> {
   }
 
   try {
-    downloadPath = await tc.downloadTool(downloadUrl);
+    toolPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
     core.debug(err);
-
     throw `Failed to download version ${version}: ${err}`;
   }
 
-  let toolPath = downloadPath;
-
   if (downloadUrl.endsWith('.tar.gz')) {
-    let extPath = await tc.extractTar(downloadPath);
-    toolPath = path.join(extPath, "kustomize")
+    toolPath = await tc.extractTar(toolPath);
+    toolPath = path.join(toolPath, toolFilename)
   }
 
-  if (osPlat == "win32") {
-    toolPath = `${toolPath}.exe`
-  }
-
-  return await tc.cacheFile(downloadPath, 'kustomize', 'kustomize', version);
+  return await tc.cacheFile(toolPath, toolFilename, toolName, version);
 }
