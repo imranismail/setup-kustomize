@@ -34,6 +34,7 @@ describe('installer tests', () => {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize.exe'))).toBe(true);
     } else {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize'))).toBe(true);
+      expect(() => fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)).not.toThrow()
     }
   }, 100000);
 
@@ -47,6 +48,7 @@ describe('installer tests', () => {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize.exe'))).toBe(true);
     } else {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize'))).toBe(true);
+      expect(() => fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)).not.toThrow()
     }
   }, 100000)
 
@@ -60,6 +62,7 @@ describe('installer tests', () => {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize.exe'))).toBe(true);
     } else {
       expect(fs.existsSync(path.join(kustomizeDir, 'kustomize'))).toBe(true);
+      expect(() => fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)).not.toThrow()
     }
   }, 100000)
 
@@ -95,7 +98,6 @@ describe('installer tests', () => {
     fs.writeFileSync(`${kustomizeDir}.complete`, 'hello');
 
     await installer.getKustomize('3.0.0');
-    // await installer.getKustomize('3.0');
     await installer.getKustomize('3.0');
   });
 });

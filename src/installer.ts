@@ -6,6 +6,7 @@ import * as restm from 'typed-rest-client/RestClient';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as fs from 'fs'
 
 let osPlat: string = os.platform();
 let osArch: string = os.arch();
@@ -192,6 +193,13 @@ async function acquireKustomize(version: string): Promise<string> {
   if (downloadUrl.endsWith('.tar.gz')) {
     toolPath = await tc.extractTar(toolPath);
     toolPath = path.join(toolPath, toolFilename)
+  }
+
+  switch (osPlat) {
+    case 'linux':
+    case 'darwin':
+      fs.chmodSync(toolPath, 0o755)
+      break;
   }
 
   return await tc.cacheFile(toolPath, toolFilename, toolName, version);
