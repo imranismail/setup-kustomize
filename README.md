@@ -12,7 +12,7 @@ jobs:
     needs:
     - publish-image
     steps:
-    - uses: imranismail/setup-kustomize@master
+    - uses: imranismail/setup-kustomize@v1
       with:
         kustomize-version: "3.1.0"
     - run: git clone https://${REPO_TOKEN}@github.com/org/deployment.git .
