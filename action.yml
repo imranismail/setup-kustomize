@@ -10,4 +10,4 @@ inputs:
     default: '3.x'
 runs:
   using: 'node12'
-  main: 'lib/setup-kustomize.js'
+  main: 'dist/index.js'
