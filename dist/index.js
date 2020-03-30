@@ -2516,7 +2516,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = core.getInput('kustomize-version');
+            const version = core.getInput('kustomize-version');
             if (version) {
                 yield installer.getKustomize(version);
             }
@@ -6814,7 +6814,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // Load tempDirectory before it gets wiped by tool-cache
-let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 const core = __importStar(__webpack_require__(470));
 const tc = __importStar(__webpack_require__(533));
 const restm = __importStar(__webpack_require__(105));
@@ -6822,8 +6821,9 @@ const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(876));
 const fs = __importStar(__webpack_require__(747));
-let osPlat = os.platform();
-let osArch = os.arch();
+let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
+const osPlat = os.platform();
+const osArch = os.arch();
 if (!tempDirectory) {
     let baseLocation;
     if (process.platform === 'win32') {
@@ -6891,18 +6891,18 @@ function queryLatestMatch(versionSpec) {
             default:
                 dataFileName = `${dataFileName}_${osArch}`;
         }
-        let versions = [];
-        let dataUrl = 'https://api.github.com/repos/kubernetes-sigs/kustomize/releases';
-        let rest = new restm.RestClient('setup-kustomize');
-        let kustomizeVersions = (yield rest.get(dataUrl)).result || [];
-        kustomizeVersions.forEach((kustomizeVersion) => {
+        const versions = [];
+        const dataUrl = 'https://api.github.com/repos/kubernetes-sigs/kustomize/releases';
+        const rest = new restm.RestClient('setup-kustomize');
+        const kustomizeVersions = (yield rest.get(dataUrl)).result || [];
+        for (const kustomizeVersion of kustomizeVersions) {
             if (kustomizeVersion.assets.some(asset => asset.name.includes(dataFileName))) {
-                let version = semver.clean(kustomizeVersion.name);
+                const version = semver.clean(kustomizeVersion.name);
                 if (version != null) {
                     versions.push(version);
                 }
             }
-        });
+        }
         return evaluateVersions(versions, versionSpec);
     });
 }
@@ -6936,15 +6936,15 @@ function acquireKustomize(version) {
         version = semver.clean(version) || '';
         let downloadUrl;
         let toolPath;
-        let toolFilename = "kustomize";
-        let toolName = "kustomize";
-        if (osPlat == "win32") {
+        let toolFilename = 'kustomize';
+        const toolName = 'kustomize';
+        if (osPlat === 'win32') {
             toolFilename = `${toolFilename}.exe`;
         }
-        if (semver.gte(version, "3.3.0")) {
+        if (semver.gte(version, '3.3.0')) {
             downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_%{os}_%{arch}.tar.gz`;
         }
-        else if (semver.gte(version, "3.2.1")) {
+        else if (semver.gte(version, '3.2.1')) {
             downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_kustomize.v${version}_%{os}_%{arch}`;
         }
         else {
@@ -6952,10 +6952,10 @@ function acquireKustomize(version) {
         }
         switch (osPlat) {
             case 'win32':
-                if (semver.lte(version, "3.2.1"))
+                if (semver.lte(version, '3.2.1'))
                     throw new Error(`Unexpected OS '${osPlat}'`);
                 downloadUrl = downloadUrl.replace('%{os}', 'windows');
-                if (semver.lt(version, "3.3.0"))
+                if (semver.lt(version, '3.3.0'))
                     downloadUrl = `${downloadUrl}.exe`;
                 break;
             case 'linux':
@@ -6977,7 +6977,7 @@ function acquireKustomize(version) {
         }
         catch (err) {
             core.debug(err);
-            throw `Failed to download version ${version}: ${err}`;
+            throw new Error(`Failed to download version ${version}: ${err}`);
         }
         if (downloadUrl.endsWith('.tar.gz')) {
             toolPath = yield tc.extractTar(toolPath);

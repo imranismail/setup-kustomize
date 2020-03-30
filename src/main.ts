@@ -1,20 +1,20 @@
-import * as core from '@actions/core';
-import * as installer from './installer';
+import * as core from '@actions/core'
+import * as installer from './installer'
 
-async function run() {
+async function run(): Promise<void> {
   try {
     //
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('kustomize-version');
+    const version = core.getInput('kustomize-version')
 
     if (version) {
-      await installer.getKustomize(version);
+      await installer.getKustomize(version)
     }
   } catch (error) {
-    core.setFailed(error.message);
+    core.setFailed(error.message)
   }
 }
 
-run();
+run()
