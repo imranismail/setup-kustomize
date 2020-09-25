@@ -70,10 +70,13 @@ async function getMaxSatisfyingVersion(
       )
 
       if (matchingAsset) {
-        const version = (versionRegex.exec(release.name) || []).shift()
+        const kustomizeVersion = (versionRegex.exec(release.name) || []).shift()
 
-        if (version != null) {
-          availableVersions.set(version, matchingAsset.browser_download_url)
+        if (kustomizeVersion != null) {
+          availableVersions.set(
+            kustomizeVersion,
+            matchingAsset.browser_download_url
+          )
         }
       }
     }

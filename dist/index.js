@@ -9108,23 +9108,24 @@ if (!tempDirectory) {
     }
     tempDirectory = path.join(baseLocation, 'actions', 'temp');
 }
-function getKustomize(versionSpec) {
+function getKustomize(targetVersion) {
     return __awaiter(this, void 0, void 0, function* () {
-        let toolPath = cache.find('kustomize', versionSpec);
-        if (!toolPath) {
-            const version = yield getMaxSatisfyingVersion(versionSpec);
-            toolPath = yield acquireVersion(version);
+        if (!semver.validRange(targetVersion))
+            throw new Error(`invalid semver requested: ${targetVersion}`);
+        let kustomizePath = cache.find('kustomize', targetVersion);
+        if (!kustomizePath) {
+            const version = yield getMaxSatisfyingVersion(targetVersion);
+            kustomizePath = yield acquireVersion(version);
         }
-        return core.addPath(toolPath);
+        return core.addPath(kustomizePath);
     });
 }
 exports.getKustomize = getKustomize;
-function getMaxSatisfyingVersion(versionSpec) {
+function getMaxSatisfyingVersion(targetVersion) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const versionRange = semver.validRange(versionSpec);
-        const downloadUrls = new Map();
-        const versions = [];
+        const version = { target: targetVersion };
+        const availableVersions = new Map();
         try {
             for (var _b = __asyncValues(octokit.paginate.iterator(octokit.repos.listReleases, {
                 owner: 'kubernetes-sigs',
@@ -9136,10 +9137,9 @@ function getMaxSatisfyingVersion(versionSpec) {
                         asset.name.includes(platform) &&
                         asset.name.includes(arch));
                     if (matchingAsset) {
-                        const version = (versionRegex.exec(release.name) || []).shift();
-                        if (version != null) {
-                            downloadUrls.set(version, matchingAsset.browser_download_url);
-                            versions.push(version);
+                        const kustomizeVersion = (versionRegex.exec(release.name) || []).shift();
+                        if (kustomizeVersion != null) {
+                            availableVersions.set(kustomizeVersion, matchingAsset.browser_download_url);
                         }
                     }
                 }
@@ -9152,12 +9152,12 @@ function getMaxSatisfyingVersion(versionSpec) {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        const versionToDownload = semver.maxSatisfying(versions, versionRange);
-        if (!versionToDownload) {
-            throw new Error(`Unable to find Kustomize version '${versionSpec}' for platform '${platform}' and architecture ${arch}.`);
+        const resolved = semver.maxSatisfying([...availableVersions.keys()], version.target);
+        if (!resolved) {
+            throw new Error(`Unable to find Kustomize version '${version.target}' for platform '${platform}' and architecture ${arch}.`);
         }
-        const downloadUrl = downloadUrls.get(versionToDownload);
-        return { name: versionToDownload, url: downloadUrl };
+        const url = availableVersions.get(resolved);
+        return Object.assign(Object.assign({}, version), { resolved, url });
     });
 }
 function acquireVersion(version) {
@@ -9169,7 +9169,7 @@ function acquireVersion(version) {
         }
         catch (err) {
             core.debug(err);
-            throw new Error(`Failed to download version ${version.name}: ${err}`);
+            throw new Error(`Failed to download version ${version.target}: ${err}`);
         }
         if (version.url.endsWith('.tar.gz')) {
             toolPath = yield cache.extractTar(toolPath);
@@ -9181,7 +9181,7 @@ function acquireVersion(version) {
                 fs.chmodSync(toolPath, 0o755);
                 break;
         }
-        return yield cache.cacheFile(toolPath, toolFilename, toolName, version.name);
+        return yield cache.cacheFile(toolPath, toolFilename, toolName, version.target);
     });
 }
 
