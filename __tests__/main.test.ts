@@ -10,7 +10,6 @@ process.env['RUNNER_TOOL_CACHE'] = toolDir
 process.env['RUNNER_TEMP'] = tempDir
 
 import * as installer from '../src/installer'
-import * as semver from 'semver'
 
 const IS_WINDOWS = os.platform() === 'win32'
 
