@@ -9082,16 +9082,16 @@ exports.getKustomize = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
 const rest_1 = __webpack_require__(889);
 const core = __importStar(__webpack_require__(470));
-const tc = __importStar(__webpack_require__(533));
-const os = __importStar(__webpack_require__(87));
+const cache = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(876));
 const fs = __importStar(__webpack_require__(747));
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
-const osPlat = os.platform();
-const osArch = os.arch();
 const octokit = new rest_1.Octokit();
 const versionRegex = /\d+\.?\d*\.?\d*/;
+const toolName = 'kustomize';
+const platform = process.platform;
+const arch = process.arch === 'x64' ? 'amd64' : process.arch;
 if (!tempDirectory) {
     let baseLocation;
     if (process.platform === 'win32') {
@@ -9110,55 +9110,20 @@ if (!tempDirectory) {
 }
 function getKustomize(versionSpec) {
     return __awaiter(this, void 0, void 0, function* () {
-        // check cache
-        let toolPath;
-        toolPath = tc.find('kustomize', versionSpec);
-        // If not found in cache, download
+        let toolPath = cache.find('kustomize', versionSpec);
         if (!toolPath) {
-            let version;
-            const c = semver.clean(versionSpec) || '';
-            // If explicit version
-            if (semver.valid(c) != null) {
-                // version to download
-                version = versionSpec;
-            }
-            else {
-                // query kustomize for a matching version
-                const match = yield queryLatestMatch(versionSpec);
-                if (!match) {
-                    throw new Error(`Unable to find Kustomize version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
-                }
-                version = match;
-            }
-            if (!toolPath) {
-                // download, extract, cache
-                toolPath = yield acquireKustomize(version);
-            }
+            const version = yield getMaxSatisfyingVersion(versionSpec);
+            toolPath = yield acquireVersion(version);
         }
-        core.addPath(toolPath);
+        return core.addPath(toolPath);
     });
 }
 exports.getKustomize = getKustomize;
-function queryLatestMatch(versionSpec) {
+function getMaxSatisfyingVersion(versionSpec) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
-        let dataFileName;
-        switch (osPlat) {
-            case 'linux':
-            case 'darwin':
-            case 'win32':
-                dataFileName = osPlat;
-                break;
-            default:
-                throw new Error(`Unexpected OS '${osPlat}'`);
-        }
-        switch (osArch) {
-            case 'x64':
-                dataFileName = `${dataFileName}_amd64`;
-                break;
-            default:
-                dataFileName = `${dataFileName}_${osArch}`;
-        }
+        const versionRange = semver.validRange(versionSpec);
+        const downloadUrls = new Map();
         const versions = [];
         try {
             for (var _b = __asyncValues(octokit.paginate.iterator(octokit.repos.listReleases, {
@@ -9167,10 +9132,13 @@ function queryLatestMatch(versionSpec) {
             })), _c; _c = yield _b.next(), !_c.done;) {
                 const response = _c.value;
                 for (const release of response.data) {
-                    if (release.assets.some(asset => asset.name.includes(dataFileName) &&
-                        asset.name.includes('kustomize'))) {
+                    const matchingAsset = release.assets.find(asset => asset.name.includes('kustomize') &&
+                        asset.name.includes(platform) &&
+                        asset.name.includes(arch));
+                    if (matchingAsset) {
                         const version = (versionRegex.exec(release.name) || []).shift();
                         if (version != null) {
+                            downloadUrls.set(version, matchingAsset.browser_download_url);
                             versions.push(version);
                         }
                     }
@@ -9184,68 +9152,36 @@ function queryLatestMatch(versionSpec) {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        return semver.maxSatisfying(versions, versionSpec);
+        const versionToDownload = semver.maxSatisfying(versions, versionRange);
+        if (!versionToDownload) {
+            throw new Error(`Unable to find Kustomize version '${versionSpec}' for platform '${platform}' and architecture ${arch}.`);
+        }
+        const downloadUrl = downloadUrls.get(versionToDownload);
+        return { name: versionToDownload, url: downloadUrl };
     });
 }
-function acquireKustomize(version) {
+function acquireVersion(version) {
     return __awaiter(this, void 0, void 0, function* () {
-        version = semver.clean(version) || '';
-        let downloadUrl;
+        const toolFilename = process.platform === 'win32' ? `${toolName}.exe` : toolName;
         let toolPath;
-        let toolFilename = 'kustomize';
-        const toolName = 'kustomize';
-        if (osPlat === 'win32') {
-            toolFilename = `${toolFilename}.exe`;
-        }
-        if (semver.gte(version, '3.3.0')) {
-            downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_v${version}_%{os}_%{arch}.tar.gz`;
-        }
-        else if (semver.gte(version, '3.2.1')) {
-            downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${version}/kustomize_kustomize.v${version}_%{os}_%{arch}`;
-        }
-        else {
-            downloadUrl = `https://github.com/kubernetes-sigs/kustomize/releases/download/v${version}/kustomize_${version}_%{os}_%{arch}`;
-        }
-        switch (osPlat) {
-            case 'win32':
-                if (semver.lte(version, '3.2.1'))
-                    throw new Error(`Unexpected OS '${osPlat}'`);
-                downloadUrl = downloadUrl.replace('%{os}', 'windows');
-                if (semver.lt(version, '3.3.0'))
-                    downloadUrl = `${downloadUrl}.exe`;
-                break;
-            case 'linux':
-            case 'darwin':
-                downloadUrl = downloadUrl.replace('%{os}', osPlat);
-                break;
-            default:
-                throw new Error(`Unexpected OS '${osPlat}'`);
-        }
-        switch (osArch) {
-            case 'x64':
-                downloadUrl = downloadUrl.replace('%{arch}', 'amd64');
-                break;
-            default:
-                throw new Error(`Unexpected Arch '${osArch}'`);
-        }
         try {
-            toolPath = yield tc.downloadTool(downloadUrl);
+            toolPath = yield cache.downloadTool(version.url);
         }
         catch (err) {
             core.debug(err);
-            throw new Error(`Failed to download version ${version}: ${err}`);
+            throw new Error(`Failed to download version ${version.name}: ${err}`);
         }
-        if (downloadUrl.endsWith('.tar.gz')) {
-            toolPath = yield tc.extractTar(toolPath);
+        if (version.url.endsWith('.tar.gz')) {
+            toolPath = yield cache.extractTar(toolPath);
             toolPath = path.join(toolPath, toolFilename);
         }
-        switch (osPlat) {
+        switch (process.platform) {
             case 'linux':
             case 'darwin':
                 fs.chmodSync(toolPath, 0o755);
                 break;
         }
-        return yield tc.cacheFile(toolPath, toolFilename, toolName, version);
+        return yield cache.cacheFile(toolPath, toolFilename, toolName, version.name);
     });
 }
 
