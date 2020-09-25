@@ -1,7 +1,7 @@
 // Load tempDirectory before it gets wiped by tool-cache
+import {Octokit} from '@octokit/rest'
 import * as core from '@actions/core'
 import * as tc from '@actions/tool-cache'
-import * as restm from 'typed-rest-client/RestClient'
 import * as os from 'os'
 import * as path from 'path'
 import * as semver from 'semver'
@@ -10,6 +10,8 @@ let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || ''
 
 const osPlat: string = os.platform()
 const osArch: string = os.arch()
+const octokit = new Octokit()
+const versionRegex = /\d+\.?\d*\.?\d*/
 
 if (!tempDirectory) {
   let baseLocation
@@ -42,15 +44,15 @@ export async function getKustomize(versionSpec: string): Promise<void> {
       version = versionSpec
     } else {
       // query kustomize for a matching version
-      version = await queryLatestMatch(versionSpec)
-      if (!version) {
+      const match = await queryLatestMatch(versionSpec)
+
+      if (!match) {
         throw new Error(
           `Unable to find Kustomize version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
         )
       }
 
-      // check cache
-      toolPath = tc.find('kustomize', version)
+      version = match
     }
 
     if (!toolPath) {
@@ -62,17 +64,7 @@ export async function getKustomize(versionSpec: string): Promise<void> {
   core.addPath(toolPath)
 }
 
-interface IAsset {
-  browser_download_url: string
-  name: string
-}
-
-interface IKustomizeVersion {
-  name: string
-  assets: IAsset[]
-}
-
-async function queryLatestMatch(versionSpec: string): Promise<string> {
+async function queryLatestMatch(versionSpec: string): Promise<string | null> {
   let dataFileName: string
 
   switch (osPlat) {
@@ -94,55 +86,32 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
   }
 
   const versions: string[] = []
-  const dataUrl =
-    'https://api.github.com/repos/kubernetes-sigs/kustomize/releases'
-  const rest: restm.RestClient = new restm.RestClient('setup-kustomize')
-  const kustomizeVersions: IKustomizeVersion[] =
-    (await rest.get<IKustomizeVersion[]>(dataUrl)).result || []
 
-  for (const kustomizeVersion of kustomizeVersions) {
-    if (
-      kustomizeVersion.assets.some(asset => asset.name.includes(dataFileName))
-    ) {
-      const version = semver.clean(kustomizeVersion.name)
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listReleases,
+    {
+      owner: 'kubernetes-sigs',
+      repo: 'kustomize'
+    }
+  )) {
+    for (const release of response.data) {
+      if (
+        release.assets.some(
+          asset =>
+            asset.name.includes(dataFileName) &&
+            asset.name.includes('kustomize')
+        )
+      ) {
+        const version = (versionRegex.exec(release.name) || []).shift()
 
-      if (version != null) {
-        versions.push(version)
+        if (version != null) {
+          versions.push(version)
+        }
       }
     }
   }
 
-  return evaluateVersions(versions, versionSpec)
-}
-
-function evaluateVersions(versions: string[], versionSpec: string): string {
-  let version = ''
-
-  core.debug(`evaluating ${versions.length} versions`)
-
-  versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
-      return 1
-    }
-    return -1
-  })
-
-  for (let i = versions.length - 1; i >= 0; i--) {
-    const potential: string = versions[i]
-    const satisfied: boolean = semver.satisfies(potential, versionSpec)
-    if (satisfied) {
-      version = potential
-      break
-    }
-  }
-
-  if (version) {
-    core.debug(`matched: ${version}`)
-  } else {
-    core.debug('match not found')
-  }
-
-  return version
+  return semver.maxSatisfying(versions, versionSpec)
 }
 
 async function acquireKustomize(version: string): Promise<string> {
