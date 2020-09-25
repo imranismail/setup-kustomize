@@ -28,26 +28,31 @@ if (!tempDirectory) {
   tempDirectory = path.join(baseLocation, 'actions', 'temp')
 }
 
-export async function getKustomize(versionSpec: string): Promise<void> {
-  let toolPath = cache.find('kustomize', versionSpec)
+export async function getKustomize(targetVersion: string): Promise<void> {
+  if (!semver.validRange(targetVersion))
+    throw new Error(`invalid semver requested: ${targetVersion}`)
 
-  if (!toolPath) {
-    const version = await getMaxSatisfyingVersion(versionSpec)
-    toolPath = await acquireVersion(version)
+  let kustomizePath = cache.find('kustomize', targetVersion)
+
+  if (!kustomizePath) {
+    const version = await getMaxSatisfyingVersion(targetVersion)
+    kustomizePath = await acquireVersion(version)
   }
 
-  return core.addPath(toolPath)
+  return core.addPath(kustomizePath)
 }
 
 interface Version {
-  name: string
+  resolved: string
+  target: string
   url: string
 }
 
-async function getMaxSatisfyingVersion(versionSpec: string): Promise<Version> {
-  const versionRange = semver.validRange(versionSpec)
-  const downloadUrls: Map<string, string> = new Map()
-  const versions: string[] = []
+async function getMaxSatisfyingVersion(
+  targetVersion: string
+): Promise<Version> {
+  const version = {target: targetVersion}
+  const availableVersions: Map<string, string> = new Map()
 
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listReleases,
@@ -68,24 +73,26 @@ async function getMaxSatisfyingVersion(versionSpec: string): Promise<Version> {
         const version = (versionRegex.exec(release.name) || []).shift()
 
         if (version != null) {
-          downloadUrls.set(version, matchingAsset.browser_download_url)
-          versions.push(version)
+          availableVersions.set(version, matchingAsset.browser_download_url)
         }
       }
     }
   }
 
-  const versionToDownload = semver.maxSatisfying(versions, versionRange)
+  const resolved = semver.maxSatisfying(
+    [...availableVersions.keys()],
+    version.target
+  )
 
-  if (!versionToDownload) {
+  if (!resolved) {
     throw new Error(
-      `Unable to find Kustomize version '${versionSpec}' for platform '${platform}' and architecture ${arch}.`
+      `Unable to find Kustomize version '${version.target}' for platform '${platform}' and architecture ${arch}.`
     )
   }
 
-  const downloadUrl = downloadUrls.get(versionToDownload) as string
+  const url = availableVersions.get(resolved) as string
 
-  return {name: versionToDownload, url: downloadUrl}
+  return {...version, resolved, url}
 }
 
 async function acquireVersion(version: Version): Promise<string> {
@@ -97,7 +104,7 @@ async function acquireVersion(version: Version): Promise<string> {
     toolPath = await cache.downloadTool(version.url)
   } catch (err) {
     core.debug(err)
-    throw new Error(`Failed to download version ${version.name}: ${err}`)
+    throw new Error(`Failed to download version ${version.target}: ${err}`)
   }
 
   if (version.url.endsWith('.tar.gz')) {
@@ -112,5 +119,5 @@ async function acquireVersion(version: Version): Promise<string> {
       break
   }
 
-  return await cache.cacheFile(toolPath, toolFilename, toolName, version.name)
+  return await cache.cacheFile(toolPath, toolFilename, toolName, version.target)
 }

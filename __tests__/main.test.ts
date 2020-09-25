@@ -17,18 +17,24 @@ describe('installer tests', () => {
   beforeAll(async () => {
     await io.rmRF(toolDir)
     await io.rmRF(tempDir)
-  }, 100000)
+  })
 
-  afterAll(async () => {
-    await io.rmRF(toolDir)
-    await io.rmRF(tempDir)
-  }, 100000)
+  it('Acquires the max satisfying version range', async () => {
+    await installer.getKustomize('~> 3.0')
+    const kustomizeDir = path.join(toolDir, 'kustomize', '~> 3.0', os.arch())
+    expect(fs.existsSync(`${kustomizeDir}.complete`)).toBe(true)
 
-  it('Acquires the latest kustomize version 3.x successfully', () => {
-    expect(async () => await installer.getKustomize('3.x')).not.toThrow()
-  }, 100000)
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(kustomizeDir, 'kustomize.exe'))).toBe(true)
+    } else {
+      expect(fs.existsSync(path.join(kustomizeDir, 'kustomize'))).toBe(true)
+      expect(() =>
+        fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)
+      ).not.toThrow()
+    }
+  })
 
-  it('Acquires kustomize version 3.2.0 successfully', async () => {
+  it('Acquires kustomize version 3.2.0', async () => {
     await installer.getKustomize('3.2.0')
     const kustomizeDir = path.join(toolDir, 'kustomize', '3.2.0', os.arch())
 
@@ -42,9 +48,9 @@ describe('installer tests', () => {
         fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)
       ).not.toThrow()
     }
-  }, 100000)
+  })
 
-  it('Acquires kustomize version 3.2.1 successfully', async () => {
+  it('Acquires kustomize version 3.2.1', async () => {
     await installer.getKustomize('3.2.1')
     const kustomizeDir = path.join(toolDir, 'kustomize', '3.2.1', os.arch())
 
@@ -58,9 +64,9 @@ describe('installer tests', () => {
         fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)
       ).not.toThrow()
     }
-  }, 100000)
+  })
 
-  it('Acquires kustomize version 3.3.0 successfully', async () => {
+  it('Acquires kustomize version 3.3.0', async () => {
     await installer.getKustomize('3.3.0')
     const kustomizeDir = path.join(toolDir, 'kustomize', '3.3.0', os.arch())
 
@@ -74,7 +80,7 @@ describe('installer tests', () => {
         fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)
       ).not.toThrow()
     }
-  }, 100000)
+  })
 
   it('Throws if no location contains correct kustomize version', async () => {
     let thrown = false
