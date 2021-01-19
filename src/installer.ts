@@ -1,5 +1,6 @@
 // Load tempDirectory before it gets wiped by tool-cache
 import {Octokit} from '@octokit/rest'
+import {retry} from '@octokit/plugin-retry'
 import * as core from '@actions/core'
 import * as cache from '@actions/tool-cache'
 import * as path from 'path'
@@ -7,7 +8,8 @@ import * as semver from 'semver'
 import * as fs from 'fs'
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || ''
 
-const octokit = new Octokit()
+const RetriableOctokit = Octokit.plugin(retry)
+const octokit = new RetriableOctokit()
 const versionRegex = /\d+\.?\d*\.?\d*/
 const toolName = 'kustomize'
 const platform = process.platform
