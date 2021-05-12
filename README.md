@@ -10,8 +10,8 @@ Every argument is optional.
 
 | Input               | Description                                                                                            |
 | ------------------- | ------------------------------------------------------------------------------------------------------ |
-| `github-token`      | PAT (Personal Access Token) for authorizing the repository.<br>_Defaults to **\${{ github.token }}**_. |
-| `kustomize-version` | Version Spec of the version to use. Examples: 10.x, 10.15.1, >=10.15.0.<br>_Defaults to **\***_.       |
+| `github-token`      | PAT (Personal Access Token) for authorizing the repository.<br>_Defaults to **\${{ github.token }}**_ |
+| `kustomize-version` | Semver of kustomize to use. Examples: `10.x`, `10.15.1`, `>=10.15.0`<br>_Defaults to **\***_       |
 
 ## Usage
 
