@@ -4,7 +4,7 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   testRunner: 'jest-circus/runner',
-  testTimeout: 60000,
+  testTimeout: 3600000,
   transform: {
     '^.+\\.ts$': 'ts-jest'
   },

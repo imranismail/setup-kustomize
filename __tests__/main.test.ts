@@ -20,8 +20,8 @@ describe('installer tests', () => {
   })
 
   it('Acquires the max satisfying version range', async () => {
-    await installer.getKustomize('~> 3.0')
-    const kustomizeDir = path.join(toolDir, 'kustomize', '~> 3.0', os.arch())
+    await installer.getKustomize('*')
+    const kustomizeDir = path.join(toolDir, 'kustomize', '*', os.arch())
     expect(fs.existsSync(`${kustomizeDir}.complete`)).toBe(true)
 
     if (IS_WINDOWS) {
@@ -95,12 +95,7 @@ describe('installer tests', () => {
   })
 
   it('Uses version of kustomize installed in cache', async () => {
-    const kustomizeDir: string = path.join(
-      toolDir,
-      'kustomize',
-      '3.2.0',
-      os.arch()
-    )
+    const kustomizeDir = path.join(toolDir, 'kustomize', '3.2.0', os.arch())
 
     await io.mkdirP(kustomizeDir)
 
@@ -112,12 +107,7 @@ describe('installer tests', () => {
   })
 
   it('Resolves semantic versions of kustomize installed in cache', async () => {
-    const kustomizeDir: string = path.join(
-      toolDir,
-      'kustomize',
-      '3.0.0',
-      os.arch()
-    )
+    const kustomizeDir = path.join(toolDir, 'kustomize', '3.0.0', os.arch())
 
     await io.mkdirP(kustomizeDir)
 

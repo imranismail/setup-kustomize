@@ -1,6 +1,6 @@
-// Load tempDirectory before it gets wiped by tool-cache
-import {Octokit} from '@octokit/rest'
-import {retry} from '@octokit/plugin-retry'
+import {GitHub, getOctokitOptions} from '@actions/github/lib/utils'
+import {OctokitOptions} from '@octokit/core/dist-types/types'
+import {throttling} from '@octokit/plugin-throttling'
 import * as core from '@actions/core'
 import * as cache from '@actions/tool-cache'
 import * as path from 'path'
@@ -8,8 +8,34 @@ import * as semver from 'semver'
 import * as fs from 'fs'
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || ''
 
-const RetriableOctokit = Octokit.plugin(retry)
-const octokit = new RetriableOctokit()
+const EnhancedOctokit = GitHub.plugin(throttling)
+
+const githubToken = core.getInput('github-token')
+
+let options: OctokitOptions = {
+  throttle: {
+    onRateLimit: (retryAfter: Number, opts: OctokitOptions) => {
+      core.warning(
+        `Request quota exhausted for request ${opts.method} ${opts.url}`
+      )
+      core.warning(`Retrying after ${retryAfter} seconds!`)
+      return true
+    },
+    onAbuseLimit: (retryAfter: Number, opts: OctokitOptions) => {
+      core.warning(`Abuse detected for request ${opts.method} ${opts.url}`)
+      core.warning(`Retrying after ${retryAfter} seconds!`)
+      return true
+    }
+  }
+}
+
+if (process.env.NODE_ENV === 'test') {
+  options = githubToken ? getOctokitOptions(githubToken, options) : options
+} else {
+  options = getOctokitOptions(githubToken, options)
+}
+
+const octokit = new EnhancedOctokit(options)
 const versionRegex = /\d+\.?\d*\.?\d*/
 const toolName = 'kustomize'
 const platform = process.platform
@@ -72,7 +98,9 @@ async function getMaxSatisfyingVersion(
       )
 
       if (matchingAsset) {
-        const kustomizeVersion = (versionRegex.exec(release.name) || []).shift()
+        const kustomizeVersion = (
+          versionRegex.exec(release.tag_name) || []
+        ).shift()
 
         if (kustomizeVersion != null) {
           availableVersions.set(

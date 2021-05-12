@@ -4,29 +4,33 @@
 
 Install any kustomize version as a step in your workflow
 
+## Options
+
+Every argument is optional.
+
+| Input               | Description                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------ |
+| `github-token`      | PAT (Personal Access Token) for authorizing the repository.<br>_Defaults to **\${{ github.token }}**_. |
+| `kustomize-version` | Version Spec of the version to use. Examples: 10.x, 10.15.1, >=10.15.0.<br>_Defaults to **\***_.       |
+
 ## Usage
 
 ```yaml
 on:
   push:
     branches:
-    - master
+      - master
 
 jobs:
   create-deployment-branch:
     runs-on: ubuntu-latest
     needs:
-    - publish-image
+      - publish-image
     steps:
-    - uses: imranismail/setup-kustomize@v1
-      with:
-        kustomize-version: "3.1.0"
-    - run: git clone https://${REPO_TOKEN}@github.com/org/deployment.git .
-      env:
-        REPO_TOKEN: ${{secrets.REPO_TOKEN}}
-    - run: git branch deployment/app/${GITHUB_REF/refs\/heads\//}
-    - run: kustomize edit set image app:${GITHUB_SHA}
-    - run: git add .
-    - run: git commit -m "Set `app` image tag to `${GITHUB_SHA}`"
-    - run: git push origin deployment/app/${GITHUB_REF/refs\/heads\//}
+      - uses: imranismail/setup-kustomize@v1
+      - run: |
+          kustomize edit set image app:${GITHUB_SHA}
+          git add .
+          git commit -m "Set `app` image tag to `${GITHUB_SHA}`"
+          git push
 ```
