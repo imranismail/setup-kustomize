@@ -1,6 +1,6 @@
 {
   "name": "setup-kustomize",
-  "version": "0.0.0",
+  "version": "1.6.1",
   "private": true,
   "description": "Github action to setup-kustomize",
   "main": "lib/main.js",
