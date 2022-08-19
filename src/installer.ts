@@ -11,6 +11,7 @@ let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || ''
 const EnhancedOctokit = GitHub.plugin(throttling)
 
 const githubToken = core.getInput('github-token')
+const failFast = core.getInput('fail-fast') === 'true' ? true : false
 
 let options: OctokitOptions = {
   throttle: {
@@ -18,13 +19,17 @@ let options: OctokitOptions = {
       core.warning(
         `Request quota exhausted for request ${opts.method} ${opts.url}`
       )
-      core.warning(`Retrying after ${retryAfter} seconds!`)
-      return true
+      core.warning(
+        `${failFast ? 'Not r' : 'R'}etrying after ${retryAfter} seconds!`
+      )
+      return !failFast
     },
     onAbuseLimit: (retryAfter: Number, opts: OctokitOptions) => {
       core.warning(`Abuse detected for request ${opts.method} ${opts.url}`)
-      core.warning(`Retrying after ${retryAfter} seconds!`)
-      return true
+      core.warning(
+        `${failFast ? 'Not r' : 'R'}etrying after ${retryAfter} seconds!`
+      )
+      return !failFast
     }
   }
 }
