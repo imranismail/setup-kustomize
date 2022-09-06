@@ -58,12 +58,16 @@ let options = {
     throttle: {
         onRateLimit: (retryAfter, opts) => {
             core.warning(`Request quota exhausted for request ${opts.method} ${opts.url}`);
-            core.warning(`${failFast ? 'Not r' : 'R'}etrying after ${retryAfter} seconds!`);
+            if (!failFast) {
+                core.warning(`Retrying after ${retryAfter} seconds!`);
+            }
             return !failFast;
         },
         onAbuseLimit: (retryAfter, opts) => {
             core.warning(`Abuse detected for request ${opts.method} ${opts.url}`);
-            core.warning(`${failFast ? 'Not r' : 'R'}etrying after ${retryAfter} seconds!`);
+            if (!failFast) {
+                core.warning(`Retrying after ${retryAfter} seconds!`);
+            }
             return !failFast;
         }
     }
