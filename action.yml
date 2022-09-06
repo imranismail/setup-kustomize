@@ -13,6 +13,10 @@ inputs:
     description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
     required: false
     default: ${{ github.token }}
+  fail-fast:
+    description: 'Fail quickly on github rate limit. "false" or "true".'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'
