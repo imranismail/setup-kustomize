@@ -8,6 +8,7 @@ const tempDir = path.join(__dirname, 'runner', 'temp')
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir
 process.env['RUNNER_TEMP'] = tempDir
+process.env['INPUT_FAIL-FAST'] = 'false'
 
 import * as installer from '../src/installer'
 
