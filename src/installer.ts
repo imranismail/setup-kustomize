@@ -92,7 +92,7 @@ async function getMaxSatisfyingVersion(
     {
       owner: 'kubernetes-sigs',
       repo: 'kustomize',
-      per_page: 100,
+      per_page: 100
     }
   )) {
     for (const release of response.data) {
