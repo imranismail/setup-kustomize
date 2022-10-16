@@ -53,7 +53,7 @@ const fs = __importStar(__nccwpck_require__(7147));
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 const EnhancedOctokit = utils_1.GitHub.plugin(plugin_throttling_1.throttling);
 const githubToken = core.getInput('github-token');
-const failFast = core.getInput('fail-fast') === 'true' ? true : false;
+const failFast = core.getBooleanInput('fail-fast');
 let options = {
     throttle: {
         onRateLimit: (retryAfter, opts) => {
