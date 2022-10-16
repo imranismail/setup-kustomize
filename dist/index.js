@@ -120,7 +120,8 @@ function getMaxSatisfyingVersion(targetVersion) {
         try {
             for (var _b = __asyncValues(octokit.paginate.iterator(octokit.repos.listReleases, {
                 owner: 'kubernetes-sigs',
-                repo: 'kustomize'
+                repo: 'kustomize',
+                per_page: 100
             })), _c; _c = yield _b.next(), !_c.done;) {
                 const response = _c.value;
                 for (const release of response.data) {
