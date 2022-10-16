@@ -16,7 +16,7 @@ inputs:
   fail-fast:
     description: 'Fail quickly on github rate limit. "false" or "true".'
     required: false
-    default: 'false'
+    default: 'true'
 runs:
   using: 'node16'
   main: 'dist/index.js'

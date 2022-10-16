@@ -12,7 +12,7 @@ Every argument is optional.
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-token`      | PAT (Personal Access Token) for authorizing the repository.<br>_Defaults to **\${{ github.token }}**_                                                                                                                                   |
 | `kustomize-version` | Semver of kustomize to use. Examples: `10.x`, `10.15.1`, `>=10.15.0`<br>_Defaults to **\***_                                                                                                                                            |
-| `fail-fast`         | When github rate limits us, fail immediately or retry after the timeout that github wishes from us? Note: When setting this to `false` (which is the default!), a github workflow might accrue a long (and possibly expensive) runtime. |
+| `fail-fast`         | When github rate limits us, fail immediately or retry after the timeout that github wishes from us? <br>Note: When this is set to `false`, a github workflow might accrue a long (and possibly expensive) runtime.<br>_Defaults to **true**_ |
 
 ## Usage
 
