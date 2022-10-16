@@ -11,7 +11,7 @@ let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || ''
 const EnhancedOctokit = GitHub.plugin(throttling)
 
 const githubToken = core.getInput('github-token')
-const failFast = core.getInput('fail-fast') === 'true' ? true : false
+const failFast = core.getBooleanInput('fail-fast')
 
 let options: OctokitOptions = {
   throttle: {
