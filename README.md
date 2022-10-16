@@ -28,7 +28,7 @@ jobs:
     needs:
       - publish-image
     steps:
-      - uses: imranismail/setup-kustomize@v1
+      - uses: imranismail/setup-kustomize@v2
       - run: |
           kustomize edit set image app:${GITHUB_SHA}
           git add .
