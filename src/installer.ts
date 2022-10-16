@@ -91,7 +91,8 @@ async function getMaxSatisfyingVersion(
     octokit.repos.listReleases,
     {
       owner: 'kubernetes-sigs',
-      repo: 'kustomize'
+      repo: 'kustomize',
+      per_page: 100,
     }
   )) {
     for (const release of response.data) {
