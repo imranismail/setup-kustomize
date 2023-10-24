@@ -35,6 +35,22 @@ describe('installer tests', () => {
     }
   })
 
+  it('Acquires kustomize version 5.2.1', async () => {
+    await installer.getKustomize('5.2.1')
+    const kustomizeDir = path.join(toolDir, 'kustomize', '5.2.1', os.arch())
+
+    expect(fs.existsSync(`${kustomizeDir}.complete`)).toBe(true)
+
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(kustomizeDir, 'kustomize.exe'))).toBe(true)
+    } else {
+      expect(fs.existsSync(path.join(kustomizeDir, 'kustomize'))).toBe(true)
+      expect(() =>
+        fs.accessSync(path.join(kustomizeDir, 'kustomize'), fs.constants.X_OK)
+      ).not.toThrow()
+    }
+  })
+
   it('Acquires kustomize version 3.2.0', async () => {
     await installer.getKustomize('3.2.0')
     const kustomizeDir = path.join(toolDir, 'kustomize', '3.2.0', os.arch())

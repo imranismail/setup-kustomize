@@ -13,7 +13,7 @@ async function run(): Promise<void> {
       await installer.getKustomize(version)
     }
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed(`${error}`)
   }
 }
 

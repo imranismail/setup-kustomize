@@ -1,6 +1,6 @@
 {
   "name": "setup-kustomize",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Github action to setup-kustomize",
   "main": "lib/main.js",
@@ -26,26 +26,26 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "@actions/github": "^4.0.0",
+    "@actions/github": "^6.0.0",
     "@actions/io": "^1.1.1",
-    "@actions/tool-cache": "^1.7.1",
-    "@octokit/plugin-throttling": "^3.4.1",
-    "semver": "^7.3.2"
+    "@actions/tool-cache": "^2.0.1",
+    "@octokit/plugin-throttling": "^8.0.1",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
-    "@types/jest": "^27.4.1",
-    "@types/node": "~17.0",
+    "@types/jest": "^29.5.6",
+    "@types/node": "^20.8.8",
     "@types/semver": "^7.3.9",
-    "@typescript-eslint/parser": "^4.8.1",
-    "@vercel/ncc": "^0.33.3",
-    "eslint": "^7.32.0",
-    "eslint-plugin-github": "^4.1.1",
-    "eslint-plugin-jest": "^24.1.3",
-    "jest": "^26.6.3",
-    "jest-circus": "^26.6.3",
+    "@typescript-eslint/parser": "^6.9.0",
+    "@vercel/ncc": "^0.38.1",
+    "eslint": "^8.52.0",
+    "eslint-plugin-github": "^4.10.1",
+    "eslint-plugin-jest": "^27.4.3",
+    "jest": "^29.7.0",
+    "jest-circus": "^29.7.0",
     "js-yaml": "^4.1.0",
-    "prettier": "2.5.1",
-    "ts-jest": "^26.4.4",
-    "typescript": "^4.1.3"
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.2.2"
   }
 }

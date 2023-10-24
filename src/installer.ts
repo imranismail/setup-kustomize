@@ -1,5 +1,5 @@
 import {GitHub, getOctokitOptions} from '@actions/github/lib/utils'
-import {OctokitOptions} from '@octokit/core/dist-types/types'
+import {OctokitOptions} from '@octokit/core/dist-types/types.d'
 import {throttling} from '@octokit/plugin-throttling'
 import * as core from '@actions/core'
 import * as cache from '@actions/tool-cache'
@@ -24,7 +24,7 @@ let options: OctokitOptions = {
       }
       return !failFast
     },
-    onAbuseLimit: (retryAfter: Number, opts: OctokitOptions) => {
+    onSecondaryRateLimit: (retryAfter: Number, opts: OctokitOptions) => {
       core.warning(`Abuse detected for request ${opts.method} ${opts.url}`)
       if (!failFast) {
         core.warning(`Retrying after ${retryAfter} seconds!`)
@@ -65,10 +65,14 @@ export async function getKustomize(targetVersion: string): Promise<void> {
   if (!semver.validRange(targetVersion))
     throw new Error(`invalid semver requested: ${targetVersion}`)
 
+  const resolver = semver.valid(targetVersion)
+    ? getPinnedVersion
+    : getMaxSatisfyingVersion
+
   let kustomizePath = cache.find('kustomize', targetVersion)
 
   if (!kustomizePath) {
-    const version = await getMaxSatisfyingVersion(targetVersion)
+    const version = await resolver(targetVersion)
     kustomizePath = await acquireVersion(version)
   }
 
@@ -81,6 +85,55 @@ interface Version {
   url: string
 }
 
+async function getPinnedVersion(targetVersion: string): Promise<Version> {
+  const prefix = semver.gt(targetVersion, '3.2.0') ? 'kustomize/v' : 'v'
+
+  try {
+    const response = await octokit.rest.repos.getReleaseByTag({
+      owner: 'kubernetes-sigs',
+      repo: 'kustomize',
+      tag: prefix + targetVersion
+    })
+
+    if (response.status !== 200) {
+      throw new Error(`Invalid response status ${response.status}`)
+    }
+
+    const release = response.data
+
+    const matchingAsset = release.assets.find(
+      asset =>
+        asset.name.includes('kustomize') &&
+        asset.name.includes(platform) &&
+        asset.name.includes(arch)
+    )
+
+    if (matchingAsset) {
+      const kustomizeVersion = (
+        versionRegex.exec(release.tag_name) || []
+      ).shift()
+
+      if (kustomizeVersion != null) {
+        return {
+          target: targetVersion,
+          resolved: kustomizeVersion,
+          url: matchingAsset.browser_download_url
+        }
+      } else {
+        throw new Error(
+          `Could not find version in release tag ${release.tag_name}`
+        )
+      }
+    } else {
+      throw new Error(
+        `Could not find asset for platform '${platform}' and '${arch}'.`
+      )
+    }
+  } catch (err) {
+    throw new Error(`Could not satisfy version range ${targetVersion}: ${err}`)
+  }
+}
+
 async function getMaxSatisfyingVersion(
   targetVersion: string
 ): Promise<Version> {
@@ -88,7 +141,7 @@ async function getMaxSatisfyingVersion(
   const availableVersions: Map<string, string> = new Map()
 
   for await (const response of octokit.paginate.iterator(
-    octokit.repos.listReleases,
+    octokit.rest.repos.listReleases,
     {
       owner: 'kubernetes-sigs',
       repo: 'kustomize',
@@ -125,7 +178,8 @@ async function getMaxSatisfyingVersion(
 
   if (!resolved) {
     throw new Error(
-      `Unable to find Kustomize version '${version.target}' for platform '${platform}' and architecture ${arch}.`
+      `Could not satisfy version '${version.target}': Could not find asset for platform '${platform}' and
+      ${arch}'.`
     )
   }
 
@@ -142,7 +196,6 @@ async function acquireVersion(version: Version): Promise<string> {
   try {
     toolPath = await cache.downloadTool(version.url)
   } catch (err) {
-    core.debug(err)
     throw new Error(`Failed to download version ${version.target}: ${err}`)
   }
 
