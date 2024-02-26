@@ -30,12 +30,12 @@
     "@actions/io": "^1.1.1",
     "@actions/tool-cache": "^2.0.1",
     "@octokit/plugin-throttling": "^8.0.1",
-    "semver": "^7.5.4"
+    "semver": "^7.6.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.6",
     "@types/node": "^20.8.8",
-    "@types/semver": "^7.3.9",
+    "@types/semver": "^7.5.8",
     "@typescript-eslint/parser": "^6.9.0",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^8.52.0",
