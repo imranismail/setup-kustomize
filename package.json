@@ -29,7 +29,7 @@
     "@actions/github": "^6.0.0",
     "@actions/io": "^1.1.1",
     "@actions/tool-cache": "^2.0.1",
-    "@octokit/plugin-throttling": "^8.0.1",
+    "@octokit/plugin-throttling": "^9.0.2",
     "semver": "^7.6.0"
   },
   "devDependencies": {
