@@ -1,5 +1,3 @@
-![build-test](https://github.com/imranismail/setup-kustomize/workflows/build-test/badge.svg)
-
 ## Description
 
 Install any kustomize version as a step in your workflow
